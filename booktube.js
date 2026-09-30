@@ -281,9 +281,19 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('loadingIndicator').classList.remove('active');
     }
 
+    let playlistTotal = 0;
+    const PLAYLIST_LOADED_PAUSE_MS = 2000;
+
     function showPlaylistProgress(loaded, total) {
+        playlistTotal = total;
         // Total stays 0 until the first page reveals it; '?' if the page doesn't state it
         showLoading(`Loading playlist... ${loaded}/${total || (loaded ? '?' : 0)}`);
+    }
+
+    // Show the final count for a moment so the user can check it before playback starts
+    async function showPlaylistLoaded(loaded, label = 'Loaded playlist') {
+        showLoading(`${label}: ${loaded}/${playlistTotal || loaded}`);
+        await new Promise(resolve => setTimeout(resolve, PLAYLIST_LOADED_PAUSE_MS));
     }
 
     // fetch() that gives up after a timeout instead of hanging on a dead proxy
@@ -339,6 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (videoIds.length > 0) {
                 localStorage.setItem(`booktube_playlist_cache_${playlistId}`, JSON.stringify(videoIds));
+                await showPlaylistLoaded(videoIds.length);
                 return videoIds;
             }
 
@@ -346,7 +357,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const cached = localStorage.getItem(`booktube_playlist_cache_${playlistId}`);
             if (cached) {
                 console.log('Using cached playlist');
-                return JSON.parse(cached);
+                const cachedIds = JSON.parse(cached);
+                await showPlaylistLoaded(cachedIds.length, 'Loaded cached playlist');
+                return cachedIds;
             }
             throw new Error('Could not load playlist');
         } finally {

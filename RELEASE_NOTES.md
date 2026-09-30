@@ -3,7 +3,7 @@
 ## Version 1.4 - September 2026
 
 ### 📋 Playlist Loading
-- **Loading Progress** - Playlist loading shows how many videos are loaded, starting at "Loading playlist... 0/0" and updating after every page
+- **Loading Progress** - Playlist loading shows how many videos are loaded, starting at "Loading playlist... 0/0" and updating after every page; the final count stays visible for 2 seconds before playback starts
 - **Working CORS Proxy** - Playlists load through r.jina.ai; the previous free proxies (corsproxy.io, cors-anywhere) no longer work without an API key
 - **Full Playlist Pagination** - Playlists larger than 100 videos are loaded completely via the watch page playlist panel (~200 videos per request)
 
