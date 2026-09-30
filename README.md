@@ -29,8 +29,6 @@ Some sample audiobooks to start with:
 * [The Bhagavad Gita, The Lord's Song](https://booktube.nosocial.net/?v=IIEJNUO1BoQ&sleep=15&loop=false&pos=saved&title=The+Bhagavad+Gita%2C+The+Lord%27s+Song&edit=true)
 * [The Stories of Mahabharata](https://booktube.nosocial.net/?v=PLAQ6vzFKj_1uqRv3OCX-Elexz9C8vfENs&sleep=30&loop=false&pos=saved&title=The+Stories+of+Mahabharata&edit=true)
 * [Siddhartha by Hermann Hesse](https://booktube.nosocial.net/?v=vS4ble0Uznk&sleep=30&loop=false&pos=saved&title=Siddhartha+By+Hermann+Hesse&edit=true)
-* [The Glass Bead Game by Hermann Hesse (in German)](https://booktube.nosocial.net/?v=PLe7ZwSHgdjYJdfNOkOrHznkN2yyT5eJpm&sleep=30&loop=false&pos=saved&title=Das+Glasperlenspiel+von+Hermann+Hesse&edit=true)
-* [The Epic Of Gilgamesh](https://booktube.nosocial.net/?v=X35eeaG9W98&sleep=30&loop=false&pos=saved&title=The+Epic+Of+Gilgamesh&edit=true)
 * [The Master and Margarita by Mikhail Bulgakov](https://booktube.nosocial.net/?v=PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC&sleep=30&loop=false&pos=saved&title=The+Master+and+Margarita+by+Mikhail+Bulgakov&edit=true)
 
 See more in [BookTube Selected Books](Books.md).
@@ -77,18 +75,18 @@ See more in [BookTube Selected Books](Books.md).
 BookTube supports URL parameters for bookmarking and sharing:
 
 ```
-?v=VIDEO_ID_OR_PLAYLIST&title=CUSTOM_TITLE&sleep=MINUTES&loop=true/false&pos=beginning/saved/random&shuffle=true/false&edit=true/false
+?v=VIDEO_ID_OR_PLAYLIST&title=CUSTOM_TITLE&sleep=MINUTES&loop=true/false&pos=beginning/saved/random/shuffle&edit=true/false
 ```
 
-**Note**: Position defaults to 'saved'. Use 'beginning' or 'random' for no position saving.
+**Note**: Position defaults to 'saved'. Use 'beginning' or 'random' for no position saving. Use 'shuffle' to play a playlist in random order.
 
 Examples:
-- Auto-play with custom title (30-minute timer): `?v=dQw4w9WgXcQ&title=My%20Audiobook&sleep=30`
-- YouTube playlist: `?v=PLe7ZwSHgdjYJdfNOkOrHznkN2yyT5eJpm&loop=true`
-- Shuffled playlist: `?v=PLe7ZwSHgdjYJdfNOkOrHznkN2yyT5eJpm&shuffle=true&loop=true`
-- Multiple videos: `?v=dQw4w9WgXcQ abc123def xyz789ghi&loop=true`
-- Loop from saved position: `?v=dQw4w9WgXcQ&loop=true&pos=saved`
-- Open in edit mode: `?v=dQw4w9WgXcQ&sleep=60&edit=true`
+- Auto-play with custom title (30-minute timer): `?v=vS4ble0Uznk&title=My%20Audiobook&sleep=30`
+- YouTube playlist: `?v=PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC&loop=true`
+- Shuffled playlist: `?v=PLAQ6vzFKj_1uqRv3OCX-Elexz9C8vfENs&pos=shuffle`
+- Multiple videos (played in sequence): `?v=NSfkgr5TTYM+yPnhdK9touU+YjvTqHfFqEc`
+- Loop from saved position: `?v=vS4ble0Uznk&loop=true&pos=saved`
+- Open in edit mode: `?v=vS4ble0Uznk&sleep=60&edit=true`
 
 ### Edit Mode
 

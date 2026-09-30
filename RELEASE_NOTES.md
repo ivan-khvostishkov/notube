@@ -1,5 +1,24 @@
 # BookTube Release Notes
 
+## Version 1.4 - September 2026
+
+### 📋 Playlist Loading
+- **Loading Progress** - Playlist loading shows how many videos are loaded, e.g. "Loading playlist... 100/254"
+- **YouTube Data API Support** - Set `YOUTUBE_API_KEY` in `booktube.js` to load playlists directly from the official API (fast, no CORS proxies)
+- **Full Playlist Pagination** - Playlists larger than 100 videos are loaded completely via continuation tokens
+
+### 🐛 Bug Fixes
+- Adapted playlist parsing to YouTube's new page layout (`lockupViewModel`)
+- Recommended videos no longer leak into loaded playlists
+- Requests time out after 10 seconds instead of hanging on unresponsive proxies
+- Last successfully loaded playlist is cached and reused when loading fails
+
+### 📚 Content
+- Removed unavailable books from the default favorites and Books.md: The Glass Bead Game, The Epic Of Gilgamesh, One Hundred Years of Solitude, Дзэн и искусство ухода за мотоциклом
+- Fixed URL parameter examples in README (`pos=shuffle` instead of the unsupported `shuffle=true`, real video IDs)
+
+---
+
 ## Version 1.3 - November 2025
 
 ### ❤️ Major Features

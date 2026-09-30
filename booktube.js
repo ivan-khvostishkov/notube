@@ -65,12 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
         { v: 'ZQwrt4R4XDw', sleep: '20', loop: false, pos: 'saved', title: 'Колыбель для кошки. Курт Воннегут' },
         { v: 'IIEJNUO1BoQ', sleep: '15', loop: false, pos: 'saved', title: 'The Bhagavad Gita, The Lord\'s Song' },
         { v: 'vS4ble0Uznk', sleep: '20', loop: false, pos: 'saved', title: 'Siddhartha By Hermann Hesse' },
-        { v: 'PLe7ZwSHgdjYJdfNOkOrHznkN2yyT5eJpm', sleep: '20', loop: false, pos: 'saved', title: 'Das Glasperlenspiel von Hermann Hesse' },
-        { v: 'X35eeaG9W98', sleep: '20', loop: false, pos: 'saved', title: 'The Epic Of Gilgamesh' },
         { v: 'PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC', sleep: '20', loop: false, pos: 'saved', title: 'The Master and Margarita by Mikhail Bulgakov' },
-        { v: 'HeyRm9WubQ0 6OpKJYYvooE', sleep: '20', loop: false, pos: 'saved', title: 'One Hundred Years of Solitude. Gabriel García Márquez' },
         { v: '-H3IjANl0V4 BR0k8I8i28U', sleep: '30', loop: false, pos: 'saved', title: 'Наши за границей. Николай Лейкин (Gennady Anatolievich)' },
-        { v: 'zmJjMlPcMfs 0dqnYl-9jDc', sleep: '20', loop: false, pos: 'saved', title: 'Дзэн и искусство ухода за мотоциклом. Роберт Пёрсиг' },
         { v: 'PL5E0m9KbufwZlALCgXRHyoE99VeORMmzr', sleep: '30', loop: false, pos: 'random', title: 'Тысяча и одна ночь. Сказки' },
         { v: 'nwRoHC83wx0', sleep: '45', loop: true, pos: 'random', title: 'Gayatri Mantra – Rig Veda 3.62.10' },
         { v: 'PLAQ6vzFKj_1uqRv3OCX-Elexz9C8vfENs', sleep: '20', loop: false, pos: 'shuffle', title: 'The Stories of Mahabharata' },
@@ -260,16 +256,25 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
     
-    // Multiple proxy services for fallback with rate limiting awareness
+    // YouTube Data API v3 key (https://console.cloud.google.com/apis/credentials).
+    // Restrict it to the booktube.nosocial.net HTTP referrer. When set, playlists are
+    // loaded directly from the official API (fast, CORS-enabled, no proxies needed).
+    const YOUTUBE_API_KEY = '';
+
+    // CORS proxies used as a fallback when no API key is configured
     const proxyServices = [
-        'https://corsproxy.io/?',
-        'https://cors-anywhere.herokuapp.com/',
+        'https://corsproxy.io/?url=',
         'https://api.allorigins.win/raw?url=',
+        'https://cors-anywhere.herokuapp.com/',
     ];
+    const FETCH_TIMEOUT_MS = 10000;
+    const MAX_PLAYLIST_PAGES = 100;
+    let preferredProxyIndex = 0;
 
     // Show/hide loading indicator
-    function showLoading() {
+    function showLoading(text = 'Loading playlist...') {
         const indicator = document.getElementById('loadingIndicator');
+        indicator.querySelector('span').textContent = text;
         indicator.classList.add('active');
         // Force reflow to restart animation
         indicator.offsetHeight;
@@ -279,337 +284,217 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('loadingIndicator').classList.remove('active');
     }
 
-    // Fetch all video IDs from YouTube playlist by scraping playlist page
+    function showPlaylistProgress(loaded, total) {
+        showLoading(total ? `Loading playlist... ${loaded}/${total}` : `Loading playlist... ${loaded}`);
+    }
+
+    // fetch() that gives up after a timeout instead of hanging on a dead proxy
+    async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            return await fetch(url, { ...options, signal: controller.signal });
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    // Fetch a URL through the proxies, starting with the last one that worked
+    async function fetchViaProxy(url, options = {}) {
+        let lastError;
+        for (let n = 0; n < proxyServices.length; n++) {
+            const i = (preferredProxyIndex + n) % proxyServices.length;
+            try {
+                const response = await fetchWithTimeout(proxyServices[i] + encodeURIComponent(url), options);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const text = await response.text();
+                preferredProxyIndex = i;
+                return text;
+            } catch (error) {
+                console.warn(`Proxy ${proxyServices[i]} failed:`, error.message);
+                lastError = error;
+            }
+        }
+        throw lastError || new Error('All proxies failed');
+    }
+
+    // Fetch all video IDs of a YouTube playlist, reporting progress as it goes
     async function fetchPlaylistVideos(playlistId) {
         console.log('Fetching playlist videos for ID:', playlistId);
         showLoading();
-        
-        for (let i = 0; i < proxyServices.length; i++) {
-            const proxyUrl = proxyServices[i];
-            console.log(`Trying proxy ${i + 1}/${proxyServices.length}:`, proxyUrl);
-            
-            try {
-                const videoIds = await fetchPlaylistFromPage(playlistId, proxyUrl);
-                if (videoIds.length > 0) {
-                    console.log(`Extracted ${videoIds.length} video IDs from playlist`);
-                    return videoIds;
-                }
-            } catch (error) {
-                console.error(`Proxy ${i + 1} failed:`, error);
-                // Add delay before trying next proxy to avoid rate limiting
-                if (i < proxyServices.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-            }
-        }
-        
-        console.log('All methods failed, falling back to RSS');
-        return await fetchPlaylistVideosRSS(playlistId);
-    }
-    
-    // Fetch playlist videos with continuation support
-    async function fetchPlaylistFromPage(playlistId, proxyUrl) {
-        const playlistUrl = `https://www.youtube.com/playlist?list=${playlistId}`;
-        
-        const response = await fetch(proxyUrl + encodeURIComponent(playlistUrl));
-        
-        if (response.status === 429) {
-            throw new Error('Rate limited - too many requests');
-        }
-        
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        const htmlText = await response.text();
-        console.log('Playlist page loaded, length:', htmlText.length);
-        
-        // Extract all video IDs using multiple methods
-        const videoIds = [];
-        const seenIds = new Set();
-        
-        // Method 1: Extract from ytInitialData
-        const ytDataMatch = htmlText.match(/var ytInitialData = ({.+?});/);
-        if (ytDataMatch) {
-            try {
-                const ytData = JSON.parse(ytDataMatch[1]);
-                const extractedIds = extractVideosFromYtData(ytData);
-                extractedIds.forEach(id => {
-                    if (!seenIds.has(id)) {
-                        seenIds.add(id);
-                        videoIds.push(id);
-                    }
-                });
-                console.log(`Method 1 (ytInitialData): Found ${extractedIds.length} videos`);
-            } catch (e) {
-                console.error('Failed to parse ytInitialData:', e);
-            }
-        }
-        
-        // Method 2: Extract using enhanced regex patterns
-        const patterns = [
-            /"videoId":"([a-zA-Z0-9_-]{11})"/g,
-            /"watchEndpoint":{"videoId":"([a-zA-Z0-9_-]{11})"/g,
-            /\/watch\?v=([a-zA-Z0-9_-]{11})/g,
-            /"url":"\/watch\?v=([a-zA-Z0-9_-]{11})/g,
-            /data-video-id="([a-zA-Z0-9_-]{11})"/g
-        ];
-        
-        patterns.forEach((pattern, index) => {
-            let match;
-            let patternCount = 0;
-            const regex = new RegExp(pattern.source, pattern.flags);
-            
-            while ((match = regex.exec(htmlText)) !== null) {
-                const videoId = match[1];
-                if (videoId && videoId.length === 11 && !seenIds.has(videoId)) {
-                    seenIds.add(videoId);
-                    videoIds.push(videoId);
-                    patternCount++;
-                }
-            }
-            
-            if (patternCount > 0) {
-                console.log(`Method 2.${index + 1} (regex): Found ${patternCount} new videos`);
-            }
-        });
-        
-        // Log initial extraction results
-        console.log(`Initial extraction complete: ${videoIds.length} videos found`);
-        
-        // Fetch additional pages with rate limiting
-        console.log('Fetching additional pages with rate limiting...');
         try {
-            for (let i = 1; i <= 20; i++) {
-                console.log(`Starting batch ${i} - waiting 250ms before request...`);
-                await new Promise(resolve => setTimeout(resolve, 250)); // in ms, delay between requests
-                
-                console.log(`Batch ${i}: Calling fetchMorePlaylistVideos...`);
-                const moreVideos = await fetchMorePlaylistVideos(playlistId, proxyUrl, i, videoIds);
-                console.log(`Batch ${i}: Received ${moreVideos.length} videos from fetchMorePlaylistVideos`);
-                
-                let newCount = 0;
-                moreVideos.forEach(id => {
-                    if (!seenIds.has(id)) {
-                        seenIds.add(id);
-                        videoIds.push(id);
-                        newCount++;
-                    }
-                });
-                
-                if (newCount > 0) {
-                    console.log(`Sequential batch ${i}: Found ${newCount} new videos, total: ${videoIds.length}`);
-                } else {
-                    console.log(`No new videos found in batch ${i}, stopping`);
-                    break; // Stop if no new videos found
+            let videoIds = [];
+            if (YOUTUBE_API_KEY) {
+                try {
+                    videoIds = await fetchPlaylistFromApi(playlistId, showPlaylistProgress);
+                } catch (error) {
+                    console.error('YouTube Data API failed:', error);
                 }
-                
-                console.log(`Batch ${i} completed successfully`);
             }
-            
-            console.log(`Sequential fetch complete: ${videoIds.length} total videos`);
-            
-        } catch (error) {
-            console.error('Sequential fetch failed:', error);
+            if (videoIds.length === 0) {
+                try {
+                    videoIds = await fetchPlaylistFromPage(playlistId, showPlaylistProgress);
+                } catch (error) {
+                    console.error('Playlist page scraping failed:', error);
+                }
+            }
+            if (videoIds.length === 0) {
+                try {
+                    videoIds = await fetchPlaylistVideosRSS(playlistId);
+                } catch (error) {
+                    console.error('RSS fallback failed:', error);
+                }
+            }
+
+            if (videoIds.length > 0) {
+                localStorage.setItem(`booktube_playlist_cache_${playlistId}`, JSON.stringify(videoIds));
+                return videoIds;
+            }
+
+            // Network failed everywhere: reuse the last successfully loaded list
+            const cached = localStorage.getItem(`booktube_playlist_cache_${playlistId}`);
+            if (cached) {
+                console.log('Using cached playlist');
+                return JSON.parse(cached);
+            }
+            throw new Error('Could not load playlist');
+        } finally {
+            hideLoading();
         }
-        
-        console.log(`Total videos extracted: ${videoIds.length}`);
-        
-        // If we have very few videos, this might be a large playlist that needs more fetching
-        if (videoIds.length < 50) {
-            console.log('Small result set, playlist might be larger than initially extracted');
-        }
-        
+    }
+
+    // Official YouTube Data API: 50 items per request, total count known upfront
+    async function fetchPlaylistFromApi(playlistId, onProgress) {
+        const videoIds = [];
+        let pageToken = '';
+        let total = 0;
+        do {
+            const url = 'https://www.googleapis.com/youtube/v3/playlistItems' +
+                `?part=contentDetails&maxResults=50&playlistId=${encodeURIComponent(playlistId)}` +
+                `&key=${YOUTUBE_API_KEY}` + (pageToken ? `&pageToken=${pageToken}` : '');
+            const response = await fetchWithTimeout(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            total = data.pageInfo?.totalResults || total;
+            data.items.forEach(item => videoIds.push(item.contentDetails.videoId));
+            onProgress(videoIds.length, total);
+            pageToken = data.nextPageToken;
+        } while (pageToken);
         return videoIds;
     }
-    
-    // Fetch more videos with retry logic
-    async function fetchMorePlaylistVideos(playlistId, proxyUrl, round, knownVideoIds, retries = 3) {
-        console.log(`fetchMorePlaylistVideos called: round=${round}, retries=${retries}`);
-        const allVideos = [];
-        const seenIds = new Set();
-        
-        // Use different URL patterns to get more coverage
-        const urls = [];
-        
-        // Create URLs with proper video IDs for the corresponding indices
-        const indices = [round * 50 + 1, round * 100 + 1];
-        indices.forEach(index => {
-            const videoId = knownVideoIds && knownVideoIds[index - 1]; // index is 1-based, array is 0-based
-            if (videoId) {
-                const url = `https://www.youtube.com/watch?v=${videoId}&list=${playlistId}&index=${index}`;
-                urls.push(url);
-                console.log(`Created URL for index ${index}: ${url}`);
-            } else {
-                console.log(`No video ID available for index ${index}`);
-            }
-        });
-        
-        console.log(`Trying ${urls.length} different URL patterns...`);
-        
-        for (let urlIndex = 0; urlIndex < urls.length; urlIndex++) {
-            const url = urls[urlIndex];
-            console.log(`URL ${urlIndex + 1}/${urls.length}: Attempting to fetch: ${url}`);
-            
-            for (let attempt = 0; attempt < retries; attempt++) {
-                console.log(`  Attempt ${attempt + 1}/${retries} for URL ${urlIndex + 1}`);
-                try {
-                    console.log(`  Making fetch request to: ${proxyUrl + encodeURIComponent(url)}`);
-                    const response = await fetch(proxyUrl + encodeURIComponent(url));
-                    console.log(`  Response received: status=${response.status}`);
-                    
-                    if (response.status === 429) {
-                        // Rate limited, wait longer
-                        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-                        console.log(`  Rate limited, waiting ${delay}ms before retry...`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        console.log(`  Wait completed, continuing to next attempt`);
-                        continue;
-                    }
-                    
-                    if (!response.ok) {
-                        console.log(`  Response not OK (${response.status}), trying next URL`);
-                        break; // Try next URL
-                    }
-                    
-                    console.log(`  Reading response text...`);
-                    const content = await response.text();
-                    console.log(`  Content received, length: ${content.length}`);
-                    
-                    // Extract video IDs using the same patterns
-                    const patterns = [
-                        /"videoId":"([a-zA-Z0-9_-]{11})"/g,
-                        /"watchEndpoint":{"videoId":"([a-zA-Z0-9_-]{11})"/g,
-                        /\/watch\?v=([a-zA-Z0-9_-]{11})/g
-                    ];
-                    
-                    console.log(`  Extracting video IDs using ${patterns.length} patterns...`);
-                    patterns.forEach((pattern, patternIndex) => {
-                        let match;
-                        let patternMatches = 0;
-                        while ((match = pattern.exec(content)) !== null) {
-                            const videoId = match[1];
-                            if (videoId && videoId.length === 11 && !seenIds.has(videoId)) {
-                                seenIds.add(videoId);
-                                allVideos.push(videoId);
-                                patternMatches++;
-                            }
-                        }
-                        if (patternMatches > 0) {
-                            console.log(`    Pattern ${patternIndex + 1}: Found ${patternMatches} new videos`);
-                        }
-                    });
-                    
-                    console.log(`  URL ${urlIndex + 1} completed successfully, found ${allVideos.length} total videos so far`);
-                    break; // Success, move to next URL
-                    
-                } catch (error) {
-                    console.log(`  Attempt ${attempt + 1} failed:`, error.message);
-                    if (attempt === retries - 1) {
-                        console.log(`  All ${retries} attempts failed for URL ${urlIndex + 1}`);
-                    }
-                }
-            }
-        }
-        
-        console.log(`fetchMorePlaylistVideos completed: returning ${allVideos.length} videos`);
-        return allVideos;
-    }
-    
-    // Extract video IDs from YouTube's initial data object
-    function extractVideosFromYtData(ytData) {
+
+    // Scrape the playlist page (first ~100 videos), then follow continuation tokens
+    async function fetchPlaylistFromPage(playlistId, onProgress) {
+        const html = await fetchViaProxy(`https://www.youtube.com/playlist?list=${playlistId}`);
+        const ytData = extractYtInitialData(html);
+        if (!ytData) throw new Error('ytInitialData not found (consent page or layout change?)');
+
         const videoIds = [];
-        
-        function traverse(obj, depth = 0) {
-            if (depth > 15 || typeof obj !== 'object' || obj === null) return;
-            
-            // Look for video ID in various object structures
-            if (obj.videoId && typeof obj.videoId === 'string' && obj.videoId.length === 11) {
-                videoIds.push(obj.videoId);
+        const seenIds = new Set();
+        const addIds = ids => {
+            let added = 0;
+            ids.forEach(id => {
+                if (!seenIds.has(id)) {
+                    seenIds.add(id);
+                    videoIds.push(id);
+                    added++;
+                }
+            });
+            return added;
+        };
+
+        const total = extractPlaylistTotal(ytData);
+        let page = extractPlaylistItems(ytData.contents);
+        addIds(page.videoIds);
+        onProgress(videoIds.length, total);
+
+        const clientVersion = (html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/) || [])[1] || '2.20250101.00.00';
+        for (let i = 0; page.continuation && i < MAX_PLAYLIST_PAGES; i++) {
+            if (total && videoIds.length >= total) break;
+            try {
+                const json = await fetchViaProxy('https://www.youtube.com/youtubei/v1/browse?prettyPrint=false', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        context: { client: { clientName: 'WEB', clientVersion } },
+                        continuation: page.continuation
+                    })
+                });
+                page = extractPlaylistItems(JSON.parse(json).onResponseReceivedActions);
+            } catch (error) {
+                // Keep what we have rather than failing the whole playlist
+                console.error('Failed to fetch playlist continuation:', error);
+                break;
             }
-            
-            // Look for playlist video renderer
+            if (addIds(page.videoIds) === 0) break;
+            onProgress(videoIds.length, total);
+        }
+
+        console.log(`Extracted ${videoIds.length}${total ? '/' + total : ''} videos from playlist page`);
+        return videoIds;
+    }
+
+    function extractYtInitialData(html) {
+        const marker = 'var ytInitialData = ';
+        const start = html.indexOf(marker);
+        if (start === -1) return null;
+        const end = html.indexOf(';</script>', start);
+        try {
+            return JSON.parse(html.slice(start + marker.length, end));
+        } catch (e) {
+            console.error('Failed to parse ytInitialData:', e);
+            return null;
+        }
+    }
+
+    // Collect only playlist entries (not recommendations) and the first continuation token
+    // (the one continuing the video list; later ones belong to other page sections)
+    function extractPlaylistItems(root) {
+        const videoIds = [];
+        let continuation = null;
+        (function traverse(obj) {
+            if (typeof obj !== 'object' || obj === null) return;
+            const lockup = obj.lockupViewModel;
+            if (lockup && lockup.contentType === 'LOCKUP_CONTENT_TYPE_VIDEO' && lockup.contentId) {
+                videoIds.push(lockup.contentId);
+            }
             if (obj.playlistVideoRenderer && obj.playlistVideoRenderer.videoId) {
                 videoIds.push(obj.playlistVideoRenderer.videoId);
             }
-            
-            // Look for compact video renderer
-            if (obj.compactVideoRenderer && obj.compactVideoRenderer.videoId) {
-                videoIds.push(obj.compactVideoRenderer.videoId);
+            if (!continuation && obj.continuationCommand && obj.continuationCommand.token) {
+                continuation = obj.continuationCommand.token;
             }
-            
-            // Traverse nested objects and arrays
             for (const key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    traverse(obj[key], depth + 1);
-                }
+                traverse(obj[key]);
             }
-        }
-        
-        traverse(ytData);
-        
-        // Also look for continuation tokens in ytData
-        function findContinuation(obj, depth = 0) {
-            if (depth > 10 || typeof obj !== 'object' || obj === null) return;
-            
-            if (obj.continuation && typeof obj.continuation === 'string') {
-                console.log(`Found continuation in ytData: ${obj.continuation.substring(0, 50)}...`);
-            }
-            
-            for (const key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    findContinuation(obj[key], depth + 1);
-                }
-            }
-        }
-        
-        findContinuation(ytData);
-        return [...new Set(videoIds)]; // Remove duplicates
+        })(root);
+        return { videoIds, continuation };
     }
-    
 
-    
+    // Total video count from the playlist sidebar, e.g. "1.819 Videos" -> 1819
+    function extractPlaylistTotal(ytData) {
+        const stats = ytData.sidebar?.playlistSidebarRenderer?.items?.[0]
+            ?.playlistSidebarPrimaryInfoRenderer?.stats?.[0];
+        const text = stats?.runs?.[0]?.text || stats?.simpleText || '';
+        return parseInt(text.replace(/\D/g, ''), 10) || 0;
+    }
+
     // Fallback RSS method (returns only 15 videos)
     async function fetchPlaylistVideosRSS(playlistId) {
-        const rssUrl = `https://www.youtube.com/feeds/videos.xml?playlist_id=${playlistId}`;
-        
-        for (let i = 0; i < proxyServices.length; i++) {
-            const proxyUrl = proxyServices[i];
-            console.log(`Trying RSS proxy ${i + 1}/${proxyServices.length}:`, proxyUrl);
-            
-            try {
-                const response = await fetch(proxyUrl + encodeURIComponent(rssUrl));
-                
-                if (response.status === 429) {
-                    console.log('RSS rate limited, waiting before retry...');
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    continue;
-                }
-                
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const xmlText = await response.text();
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-                const entries = xmlDoc.getElementsByTagName('entry');
-                
-                const videoIds = [];
-                for (let j = 0; j < entries.length; j++) {
-                    const videoId = entries[j].getElementsByTagName('yt:videoId')[0]?.textContent;
-                    if (videoId) {
-                        videoIds.push(videoId);
-                    }
-                }
-                
-                console.log('RSS fallback extracted video IDs:', videoIds.length);
-                return videoIds;
-            } catch (error) {
-                console.error(`RSS proxy ${i + 1} failed:`, error);
-                if (i < proxyServices.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                } else {
-                    throw new Error('All methods failed');
-                }
+        const xmlText = await fetchViaProxy(`https://www.youtube.com/feeds/videos.xml?playlist_id=${playlistId}`);
+        const xmlDoc = new DOMParser().parseFromString(xmlText, 'text/xml');
+        const entries = xmlDoc.getElementsByTagName('entry');
+
+        const videoIds = [];
+        for (let j = 0; j < entries.length; j++) {
+            const videoId = entries[j].getElementsByTagName('yt:videoId')[0]?.textContent;
+            if (videoId) {
+                videoIds.push(videoId);
             }
         }
+
+        console.log('RSS fallback extracted video IDs:', videoIds.length);
+        return videoIds;
     }
 
     // Parse query parameters
