@@ -256,19 +256,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
     
-    // YouTube Data API v3 key (https://console.cloud.google.com/apis/credentials).
-    // Restrict it to the booktube.nosocial.net HTTP referrer. When set, playlists are
-    // loaded directly from the official API (fast, CORS-enabled, no proxies needed).
-    const YOUTUBE_API_KEY = '';
-
-    // CORS proxies used as a fallback when no API key is configured
+    // CORS proxies, tried in order starting with the last one that worked.
+    // r.jina.ai returns the raw page with X-Return-Format: html; the others are
+    // intermittently available fallbacks.
     const proxyServices = [
-        'https://corsproxy.io/?url=',
-        'https://api.allorigins.win/raw?url=',
-        'https://cors-anywhere.herokuapp.com/',
+        { prefix: 'https://r.jina.ai/', encode: false, headers: { 'X-Return-Format': 'html' } },
+        { prefix: 'https://api.allorigins.win/raw?url=', encode: true },
+        { prefix: 'https://api.codetabs.com/v1/proxy?quest=', encode: true },
     ];
-    const FETCH_TIMEOUT_MS = 10000;
-    const MAX_PLAYLIST_PAGES = 100;
+    const FETCH_TIMEOUT_MS = 20000;
+    const MAX_PLAYLIST_PAGES = 50;
     let preferredProxyIndex = 0;
 
     // Show/hide loading indicator
@@ -285,7 +282,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showPlaylistProgress(loaded, total) {
-        showLoading(total ? `Loading playlist... ${loaded}/${total}` : `Loading playlist... ${loaded}`);
+        // Total stays 0 until the first page reveals it; '?' if the page doesn't state it
+        showLoading(`Loading playlist... ${loaded}/${total || (loaded ? '?' : 0)}`);
     }
 
     // fetch() that gives up after a timeout instead of hanging on a dead proxy
@@ -300,18 +298,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Fetch a URL through the proxies, starting with the last one that worked
-    async function fetchViaProxy(url, options = {}) {
+    async function fetchViaProxy(url) {
         let lastError;
         for (let n = 0; n < proxyServices.length; n++) {
             const i = (preferredProxyIndex + n) % proxyServices.length;
+            const proxy = proxyServices[i];
             try {
-                const response = await fetchWithTimeout(proxyServices[i] + encodeURIComponent(url), options);
+                const proxyUrl = proxy.prefix + (proxy.encode ? encodeURIComponent(url) : url);
+                const response = await fetchWithTimeout(proxyUrl, { headers: proxy.headers || {} });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const text = await response.text();
                 preferredProxyIndex = i;
                 return text;
             } catch (error) {
-                console.warn(`Proxy ${proxyServices[i]} failed:`, error.message);
+                console.warn(`Proxy ${proxy.prefix} failed:`, error.message);
                 lastError = error;
             }
         }
@@ -321,22 +321,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch all video IDs of a YouTube playlist, reporting progress as it goes
     async function fetchPlaylistVideos(playlistId) {
         console.log('Fetching playlist videos for ID:', playlistId);
-        showLoading();
+        showPlaylistProgress(0, 0);
         try {
             let videoIds = [];
-            if (YOUTUBE_API_KEY) {
-                try {
-                    videoIds = await fetchPlaylistFromApi(playlistId, showPlaylistProgress);
-                } catch (error) {
-                    console.error('YouTube Data API failed:', error);
-                }
-            }
-            if (videoIds.length === 0) {
-                try {
-                    videoIds = await fetchPlaylistFromPage(playlistId, showPlaylistProgress);
-                } catch (error) {
-                    console.error('Playlist page scraping failed:', error);
-                }
+            try {
+                videoIds = await fetchPlaylistFromPage(playlistId, showPlaylistProgress);
+            } catch (error) {
+                console.error('Playlist page scraping failed:', error);
             }
             if (videoIds.length === 0) {
                 try {
@@ -363,27 +354,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Official YouTube Data API: 50 items per request, total count known upfront
-    async function fetchPlaylistFromApi(playlistId, onProgress) {
-        const videoIds = [];
-        let pageToken = '';
-        let total = 0;
-        do {
-            const url = 'https://www.googleapis.com/youtube/v3/playlistItems' +
-                `?part=contentDetails&maxResults=50&playlistId=${encodeURIComponent(playlistId)}` +
-                `&key=${YOUTUBE_API_KEY}` + (pageToken ? `&pageToken=${pageToken}` : '');
-            const response = await fetchWithTimeout(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            total = data.pageInfo?.totalResults || total;
-            data.items.forEach(item => videoIds.push(item.contentDetails.videoId));
-            onProgress(videoIds.length, total);
-            pageToken = data.nextPageToken;
-        } while (pageToken);
-        return videoIds;
-    }
-
-    // Scrape the playlist page (first ~100 videos), then follow continuation tokens
+    // Scrape the playlist page (first 100 videos), then page through the rest using the
+    // watch page playlist panel, which lists ~200 videos around the requested index
     async function fetchPlaylistFromPage(playlistId, onProgress) {
         const html = await fetchViaProxy(`https://www.youtube.com/playlist?list=${playlistId}`);
         const ytData = extractYtInitialData(html);
@@ -404,34 +376,47 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         const total = extractPlaylistTotal(ytData);
-        let page = extractPlaylistItems(ytData.contents);
-        addIds(page.videoIds);
+        const firstPage = extractPlaylistItems(ytData.contents);
+        addIds(firstPage.videoIds);
         onProgress(videoIds.length, total);
 
-        const clientVersion = (html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/) || [])[1] || '2.20250101.00.00';
-        for (let i = 0; page.continuation && i < MAX_PLAYLIST_PAGES; i++) {
-            if (total && videoIds.length >= total) break;
-            try {
-                const json = await fetchViaProxy('https://www.youtube.com/youtubei/v1/browse?prettyPrint=false', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        context: { client: { clientName: 'WEB', clientVersion } },
-                        continuation: page.continuation
-                    })
-                });
-                page = extractPlaylistItems(JSON.parse(json).onResponseReceivedActions);
-            } catch (error) {
-                // Keep what we have rather than failing the whole playlist
-                console.error('Failed to fetch playlist continuation:', error);
-                break;
+        let hasMore = total ? videoIds.length < total : !!firstPage.continuation;
+        let index = videoIds.length;
+        for (let i = 0; hasMore && i < MAX_PLAYLIST_PAGES; i++) {
+            let panel = null;
+            const lastId = videoIds[videoIds.length - 1];
+            for (let attempt = 0; attempt < 2 && !panel; attempt++) {
+                try {
+                    const watchHtml = await fetchViaProxy(
+                        `https://www.youtube.com/watch?v=${lastId}&list=${playlistId}&index=${index}`);
+                    panel = extractPlaylistPanel(extractYtInitialData(watchHtml));
+                } catch (error) {
+                    console.error('Failed to fetch more playlist videos:', error);
+                }
             }
-            if (addIds(page.videoIds) === 0) break;
+            // Keep what we have rather than failing the whole playlist
+            if (!panel || addIds(panel.videoIds) === 0) break;
             onProgress(videoIds.length, total);
+            // The panel reaches ~200 videos past the requested index; a shorter reach means
+            // the end of the playlist (the total may include hidden unavailable videos)
+            const reachedEnd = panel.lastIndex && panel.lastIndex - index < 190;
+            index = panel.lastIndex || videoIds.length;
+            hasMore = !reachedEnd && (!total || videoIds.length < total);
         }
 
-        console.log(`Extracted ${videoIds.length}${total ? '/' + total : ''} videos from playlist page`);
+        console.log(`Extracted ${videoIds.length}${total ? '/' + total : ''} videos from playlist`);
         return videoIds;
+    }
+
+    // Videos from the watch page playlist panel and the playlist index of the last one
+    function extractPlaylistPanel(ytData) {
+        const contents = ytData?.contents?.twoColumnWatchNextResults?.playlist?.playlist?.contents || [];
+        const items = contents.map(item => item.playlistPanelVideoRenderer).filter(Boolean);
+        const last = items[items.length - 1];
+        return {
+            videoIds: items.map(item => item.videoId),
+            lastIndex: parseInt(last?.indexText?.simpleText, 10) || 0
+        };
     }
 
     function extractYtInitialData(html) {

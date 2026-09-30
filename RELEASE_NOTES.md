@@ -3,14 +3,14 @@
 ## Version 1.4 - September 2026
 
 ### 📋 Playlist Loading
-- **Loading Progress** - Playlist loading shows how many videos are loaded, e.g. "Loading playlist... 100/254"
-- **YouTube Data API Support** - Set `YOUTUBE_API_KEY` in `booktube.js` to load playlists directly from the official API (fast, no CORS proxies)
-- **Full Playlist Pagination** - Playlists larger than 100 videos are loaded completely via continuation tokens
+- **Loading Progress** - Playlist loading shows how many videos are loaded, starting at "Loading playlist... 0/0" and updating after every page
+- **Working CORS Proxy** - Playlists load through r.jina.ai; the previous free proxies (corsproxy.io, cors-anywhere) no longer work without an API key
+- **Full Playlist Pagination** - Playlists larger than 100 videos are loaded completely via the watch page playlist panel (~200 videos per request)
 
 ### 🐛 Bug Fixes
 - Adapted playlist parsing to YouTube's new page layout (`lockupViewModel`)
 - Recommended videos no longer leak into loaded playlists
-- Requests time out after 10 seconds instead of hanging on unresponsive proxies
+- Requests time out after 20 seconds instead of hanging on unresponsive proxies; failed pages are retried once
 - Last successfully loaded playlist is cached and reused when loading fails
 
 ### 📚 Content
