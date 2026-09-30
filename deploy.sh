@@ -1,3 +1,4 @@
+#!/bin/bash
 aws s3 sync --delete . s3://booktube.nosocial.net/ \
   --exclude "*" \
   --include "index.html" \
