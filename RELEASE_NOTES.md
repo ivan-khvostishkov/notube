@@ -19,7 +19,7 @@
 
 ### 🏷️ Two Names, One App
 - **NoTube** - The app is now also **NoTube** - "YouTube without the feed" - matching what it is used for beyond books: ∞ logo, blue on black, and starter favorites made of music, language lessons and workouts
-- **BookTube Stays** - booktube.nosocial.net keeps the name, the book logo, the red on black palette and the audiobook starter favorites. The brand is picked from the hostname, so one deployment serves both; `?brand=booktube` / `?brand=notube` switches it for a visit
+- **BookTube Stays** - booktube.nosocial.net keeps the name, the book logo, the red on black palette and the audiobook starter favorites. The brand is picked from the hostname, so one deployment serves both
 - **Both Addresses** - booktube@nosocial.net on BookTube, notube@nosocial.net on NoTube
 - **Nothing to Migrate** - Same storage, same favorites, same saved positions, same shared links. Exported data files are now named `notube-settings-<date>.json`, and older `booktube-settings-*.json` files still import
 

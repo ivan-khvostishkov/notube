@@ -7,7 +7,7 @@ A lightweight web application for playing long-form YouTube content hands-free. 
 - 📖 **BookTube** - https://booktube.nosocial.net - the original name and domain: book logo, red on black, starter favorites are the audiobooks. Support: booktube@nosocial.net
 - ∞ **NoTube** - https://notube.nosocial.net - the same app under the other name: ∞ logo, blue on black, starter favorites are everything that is not a book - music, language lessons, workouts. Support: notube@nosocial.net
 
-One deployment serves both - the brand comes from the hostname, and favorites, saved positions and shared links work the same on either. Add `?brand=booktube` or `?brand=notube` to any URL to see the other face.
+One deployment serves both - the brand comes from the hostname, and favorites, saved positions and shared links work the same on either.
 
 **Author:** Ivan Khvostishkov & NoSocial.Net
 
