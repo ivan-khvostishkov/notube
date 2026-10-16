@@ -35,6 +35,7 @@
 - Added to the default favorites: Suetonius' The Lives of the Caesars (Classics in Audiobook) on BookTube; Default Music for Generic People (rmnz, looping indefinitely), Home Exercise Guide: Abs and the German A1/A2/B1 Hands-Free Trainers (random position, indefinite loop, one-hour timer) on NoTube
 - README examples now show an indefinite loop (music album) and random position (workout playlist)
 - Removed Books.md: the selected books are the favorites list inside the app
+- **Hands-Free on iPhone** - README now opens with the iOS flow that makes the app useful on a phone: play, full screen, swipe up to Picture in Picture, then keep using the phone or lock the screen while playback continues
 
 ### 🐛 Bug Fixes
 - `youtube.com/shorts/...` and `youtube.com/live/...` URLs are recognized as video IDs

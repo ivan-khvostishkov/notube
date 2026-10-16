@@ -11,6 +11,22 @@ One deployment serves both - the brand comes from the hostname, and favorites, s
 
 **Author:** Ivan Khvostishkov & NoSocial.Net
 
+## 📱 Hands-Free on iPhone
+
+The best part of using this on a phone: once playback starts, you can put the phone away and
+keep listening. In Safari on iOS:
+
+1. Enter a video, a playlist or pick a favorite, and press **Play**
+2. Tap the **full-screen** button in the player
+3. **Swipe up** to the Home screen - the video keeps playing in a floating Picture in Picture window
+4. Carry on with other apps, or **lock the screen** - the audio continues, with play and pause
+   on the lock screen
+
+That is what turns it into an audiobook and music player: a full-length book or album runs for
+hours in the background, the sleep timer still pauses it on time, and your position is saved
+for the next session. The exact gestures depend on your iOS and Safari version - if playback
+stops when you leave the page, start Picture in Picture from the full-screen player first.
+
 ## Features
 
 - 🎵 **YouTube Integration** - Play any YouTube video by ID or URL
