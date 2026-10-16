@@ -17,6 +17,100 @@ tag.src = "https://www.youtube.com/iframe_api";
 const firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
+// Shown in the About box. Keep in step with the version in package.json and RELEASE_NOTES.md
+const APP_VERSION = '2.0';
+
+// The title placeholder, i.e. "no custom title given". 'YouTube Audiobook Player' is the
+// placeholder from versions before the app covered more than audiobooks; links and favorites
+// still carrying it are treated as having no title of their own.
+const DEFAULT_TITLE = 'Hands-Free YouTube Player';
+const LEGACY_DEFAULT_TITLES = ['YouTube Audiobook Player'];
+
+function isDefaultTitle(title) {
+    return title === DEFAULT_TITLE || LEGACY_DEFAULT_TITLES.includes(title);
+}
+
+// Two faces of one app, chosen by hostname: BookTube - the original name and domain - keeps
+// the book logo and the audiobook presets, NoTube gets the logo ∞ and everything that is not
+// a book. Same code, same storage format; only the preset selection and the wording differ.
+// ?brand=booktube or ?brand=notube overrides the hostname, for testing and dev.
+const BRANDS = {
+    booktube: {
+        key: 'booktube',
+        name: 'BookTube',
+        icon: 'fa-book-reader',
+        tagline: 'Audiobooks on YouTube, hands-free: full-length books, lectures and readings.',
+        email: 'booktube@nosocial.net',
+        note: 'Looking for music, language lessons and workouts? Same app, as ',
+        isPreset: preset => !!preset.book
+    },
+    notube: {
+        key: 'notube',
+        name: 'NoTube',
+        icon: 'fa-infinity',
+        tagline: 'YouTube without the feed. Hands-free playback of lectures, language ' +
+            'lessons, music and workouts.',
+        email: 'notube@nosocial.net',
+        note: 'Looking for the audiobook collection? Same app, as ',
+        isPreset: preset => !preset.book
+    }
+};
+BRANDS.booktube.other = BRANDS.notube;
+BRANDS.notube.other = BRANDS.booktube;
+
+const BRAND = (function detectBrand() {
+    const override = new URLSearchParams(window.location.search).get('brand');
+    if (override && BRANDS[override]) return BRANDS[override];
+    return /booktube/i.test(window.location.hostname) ? BRANDS.booktube : BRANDS.notube;
+})();
+
+// Runs at script load (the script tag is last in the body) so the brand is in place before
+// the first paint, whichever domain served the identical index.html
+(function applyBranding() {
+    console.log('Brand:', BRAND.name);
+    document.title = `${BRAND.name} - ${DEFAULT_TITLE}`;
+    // Picks the brand palette in styles.css: red on black for BookTube, blue for NoTube
+    document.documentElement.dataset.brand = BRAND.key;
+
+    document.querySelectorAll('.brand-icon').forEach(icon => {
+        icon.classList.remove(BRAND.other.icon);
+        icon.classList.add(BRAND.icon);
+    });
+
+    const set = (id, apply) => {
+        const el = document.getElementById(id);
+        if (el) apply(el);
+    };
+    // The shipped favicon.ico is the BookTube book; NoTube draws its ∞ inline
+    if (BRAND.key === 'notube') {
+        set('favicon', el => {
+            el.type = 'image/svg+xml';
+            el.href = 'data:image/svg+xml,' + encodeURIComponent(
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+                '<rect width="64" height="64" rx="12" fill="#14171f"/>' +
+                '<g fill="none" stroke="#4d8dff" stroke-width="7">' +
+                '<circle cx="23" cy="32" r="11"/><circle cx="41" cy="32" r="11"/>' +
+                '</g></svg>');
+        });
+    }
+    set('brandName', el => el.textContent = BRAND.name);
+    set('appVersion', el => el.textContent = `Version ${APP_VERSION}`);
+    set('aboutTitle', el => el.textContent = `About ${BRAND.name}`);
+    set('aboutTagline', el => el.textContent = BRAND.tagline);
+    set('brandNote', el => {
+        const link = document.createElement('a');
+        link.href = `https://${BRAND.other.key}.nosocial.net/`;
+        link.textContent = BRAND.other.name;
+        el.textContent = BRAND.note;
+        el.appendChild(link);
+        el.appendChild(document.createTextNode('.'));
+    });
+    set('supportEmail', el => {
+        el.textContent = BRAND.email;
+        el.href = `mailto:${BRAND.email}`;
+    });
+})();
+
 // DOM Elements - Get them after DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     const mainScreen = document.getElementById('mainScreen');
@@ -52,80 +146,130 @@ document.addEventListener('DOMContentLoaded', function() {
     // Video input info tooltip
     const videoInputInfo = document.getElementById('videoInputInfo');
     videoInputInfo.addEventListener('click', () => {
-        alert('Supports video IDs, URLs, playlist IDs (PLxxx), space-separated');
+        alert('Supports video IDs, URLs, playlist IDs (PLxxx, OLAK5xxx), space-separated');
     });
 
     // Default favorites list
     const defaultFavorites = [
-        { v: 'NSfkgr5TTYM yPnhdK9touU YjvTqHfFqEc', sleep: '20', loop: false, pos: 'saved', title: 'Сумма технологии. Станислав Лем' },
-        { v: 'zHtvJj5bgoo', sleep: '45', loop: false, pos: 'saved', title: 'The Aeneid by Virgil' },
-        { v: 'PLQ7iliSaUiA_KHmGhRd4HpuuPM37UGSE_', sleep: '20', loop: false, pos: 'saved', title: 'История. Геродот' },
-        { v: 'gKg0W5Un0PI', sleep: '20', loop: false, pos: 'saved', title: 'Дао дэ цзин. Лао-цзы' },
-        { v: 'PLjPg58THfX_yQrAgXoShepHoDLtOVeKWh', sleep: '20', loop: false, pos: 'saved', title: 'Махабхарата' },
-        { v: 'ZQwrt4R4XDw', sleep: '20', loop: false, pos: 'saved', title: 'Колыбель для кошки. Курт Воннегут' },
-        { v: 'IIEJNUO1BoQ', sleep: '15', loop: false, pos: 'saved', title: 'The Bhagavad Gita, The Lord\'s Song' },
-        { v: 'vS4ble0Uznk', sleep: '20', loop: false, pos: 'saved', title: 'Siddhartha By Hermann Hesse' },
-        { v: 'PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC', sleep: '20', loop: false, pos: 'saved', title: 'The Master and Margarita by Mikhail Bulgakov' },
-        { v: '-H3IjANl0V4 BR0k8I8i28U', sleep: '30', loop: false, pos: 'saved', title: 'Наши за границей. Николай Лейкин (Gennady Anatolievich)' },
-        { v: 'PL5E0m9KbufwZlALCgXRHyoE99VeORMmzr', sleep: '30', loop: false, pos: 'random', title: 'Тысяча и одна ночь. Сказки' },
+        { v: 'NSfkgr5TTYM yPnhdK9touU YjvTqHfFqEc', book: true, sleep: '20', loop: false, pos: 'saved', title: 'Сумма технологии. Станислав Лем' },
+        { v: 'zHtvJj5bgoo', book: true, sleep: '45', loop: false, pos: 'saved', title: 'The Aeneid by Virgil' },
+        { v: 'PLQ7iliSaUiA_KHmGhRd4HpuuPM37UGSE_', book: true, sleep: '20', loop: false, pos: 'saved', title: 'История. Геродот' },
+        { v: 'gKg0W5Un0PI', book: true, sleep: '20', loop: false, pos: 'saved', title: 'Дао дэ цзин. Лао-цзы' },
+        { v: 'PLjPg58THfX_yQrAgXoShepHoDLtOVeKWh', book: true, sleep: '20', loop: false, pos: 'saved', title: 'Махабхарата' },
+        { v: 'ZQwrt4R4XDw', book: true, sleep: '20', loop: false, pos: 'saved', title: 'Колыбель для кошки. Курт Воннегут' },
+        { v: 'IIEJNUO1BoQ', book: true, sleep: '15', loop: false, pos: 'saved', title: 'The Bhagavad Gita, The Lord\'s Song' },
+        { v: 'vS4ble0Uznk', book: true, sleep: '20', loop: false, pos: 'saved', title: 'Siddhartha By Hermann Hesse' },
+        { v: 'PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC', book: true, sleep: '20', loop: false, pos: 'saved', title: 'The Master and Margarita by Mikhail Bulgakov' },
+        { v: '-H3IjANl0V4 BR0k8I8i28U', book: true, sleep: '30', loop: false, pos: 'saved', title: 'Наши за границей. Николай Лейкин (Gennady Anatolievich)' },
+        { v: 'PLa-hUuSspM0GdvkB-YHW5KVyuCe2QrhMx', book: true, sleep: '30', loop: false, pos: 'saved', title: 'Suetonius\' The Lives of the Caesars (Classics in Audiobook)' },
+        { v: 'OLAK5uy_kZPrWNRLjJnjHMA31GyiFwmphn_4a-rE0', sleep: '30', loop: true, pos: 'saved', title: 'Default Music for Generic People (rmnz)' },
+        { v: 'PL5E0m9KbufwZlALCgXRHyoE99VeORMmzr', book: true, sleep: '30', loop: false, pos: 'random', title: 'Тысяча и одна ночь. Сказки' },
         { v: 'nwRoHC83wx0', sleep: '45', loop: true, pos: 'random', title: 'Gayatri Mantra – Rig Veda 3.62.10' },
-        { v: 'PLAQ6vzFKj_1uqRv3OCX-Elexz9C8vfENs', sleep: '20', loop: false, pos: 'shuffle', title: 'The Stories of Mahabharata' },
-        { v: 'PLb-JKoHS0AMAJ1gApOJOxuZoLsGZPLWqc', sleep: '30', loop: false, pos: 'shuffle', title: '"Модель для сборки". Радиопрограмма' },
-        { v: 'PLTMnNOWf9hrpvVf_1JksytDPOmjh0JJpE', sleep: '30', loop: false, pos: 'shuffle', title: 'Сборник аудиокниг (Gennady Anatolievich)' }
+        { v: 'PLG9bZb7LskJM', sleep: '0', loop: true, pos: 'random', title: 'Home Exercise Guide: Abs' },
+        { v: 'tSCrnPUt-pU', sleep: '60', loop: true, pos: 'random', title: 'German A1 Hands-Free Trainer' },
+        { v: 'esvhhEGLTNA', sleep: '60', loop: true, pos: 'random', title: 'German A2 Hands-Free Trainer' },
+        { v: 'wNoTY_TZvqI UBcIZf76mIs JYDI_HhWIgs', sleep: '60', loop: true, pos: 'random', title: 'German B1 Hands-Free Trainer' },
+        { v: 'PLAQ6vzFKj_1uqRv3OCX-Elexz9C8vfENs', book: true, sleep: '20', loop: false, pos: 'shuffle', title: 'The Stories of Mahabharata' },
+        { v: 'PLb-JKoHS0AMAJ1gApOJOxuZoLsGZPLWqc', book: true, sleep: '30', loop: false, pos: 'shuffle', title: '"Модель для сборки". Радиопрограмма' },
+        { v: 'PLTMnNOWf9hrpvVf_1JksytDPOmjh0JJpE', book: true, sleep: '30', loop: false, pos: 'shuffle', title: 'Сборник аудиокниг (Gennady Anatolievich)' }
     ];
 
-    // Favorites management
-    function getFavorites() {
-        const stored = localStorage.getItem('booktube_favorites');
-        const userFavorites = stored ? JSON.parse(stored) : [];
-        // Return user favorites first, then default favorites
-        return [...userFavorites, ...defaultFavorites];
+    // Which presets have already been copied into the favorites list of this browser
+    const PRESET_SEED_KEY = 'booktube_seeded_presets';
+
+    // Presets of the current brand: the books on BookTube, everything else on NoTube.
+    // The flag is internal, it is not copied into the favorites list.
+    function brandPresets() {
+        return defaultFavorites.filter(BRAND.isPreset).map(({ book, ...preset }) => preset);
     }
 
-    function saveFavorites(userFavorites) {
-        localStorage.setItem('booktube_favorites', JSON.stringify(userFavorites));
+    // Favorites management
+    // Favorites hold normalized IDs; compare on those so the same video saved as a URL and
+    // as a bare ID counts as one entry
+    function favoriteKey(value) {
+        return convertToVideoIds(value.replace(/\+/g, ' ')) || value;
+    }
+
+    // The favorites list, exactly as stored - and exactly as exported
+    function getFavorites() {
+        return JSON.parse(localStorage.getItem('booktube_favorites') || '[]');
+    }
+
+    function saveFavorites(favorites) {
+        localStorage.setItem('booktube_favorites', JSON.stringify(favorites));
+    }
+
+    // Presets ship in the app code and are copied into the stored favorites list, each one
+    // only once. That keeps the list the user sees identical to the list that is stored and
+    // exported, while deletes and edits of a preset stick and presets added in a later
+    // release still reach everyone.
+    function seedPresetFavorites() {
+        const stored = localStorage.getItem('booktube_favorites');
+        const favorites = stored ? JSON.parse(stored) : [];
+        const seeded = new Set(JSON.parse(localStorage.getItem(PRESET_SEED_KEY) || '[]'));
+        const present = new Set(favorites.map(fav => favoriteKey(fav.v)));
+        let added = 0;
+
+        brandPresets().forEach(preset => {
+            const key = favoriteKey(preset.v);
+            if (seeded.has(key)) return;   // already copied once: the user may have deleted it since
+            seeded.add(key);
+            if (present.has(key)) return;  // the user already has their own version of it
+            favorites.push({ ...preset, v: key });
+            added++;
+        });
+
+        if (added > 0 || !stored) saveFavorites(favorites);
+        localStorage.setItem(PRESET_SEED_KEY, JSON.stringify([...seeded]));
+        if (added > 0) console.log('Copied', added, 'preset favorites into the favorites list');
     }
 
     function addToFavorites(item) {
-        const userFavorites = JSON.parse(localStorage.getItem('booktube_favorites') || '[]');
-        const allFavorites = [...userFavorites, ...defaultFavorites];
-        
-        // Check if item already exists in user favorites
-        const userIndex = userFavorites.findIndex(fav => fav.v === item.v && fav.title === item.title);
-        const defaultIndex = defaultFavorites.findIndex(fav => fav.v === item.v && fav.title === item.title);
-        
-        if (userIndex !== -1) {
-            // Update existing user favorite with new settings
-            userFavorites[userIndex] = item;
-        } else if (defaultIndex !== -1) {
-            // Item exists in defaults, add updated version to user favorites
-            userFavorites.unshift(item);
+        const favorites = getFavorites();
+        const key = favoriteKey(item.v);
+        const existingIndex = favorites.findIndex(fav => favoriteKey(fav.v) === key);
+
+        if (existingIndex !== -1) {
+            // Same video(s) already saved, as a URL or as an ID: update that entry in place
+            favorites[existingIndex] = { ...item, v: key };
         } else {
-            // Completely new item, add to beginning
-            userFavorites.unshift(item);
+            favorites.unshift({ ...item, v: key });
         }
-        
-        saveFavorites(userFavorites);
+
+        saveFavorites(favorites);
     }
 
-    function removeFromFavorites(index) {
-        const userFavorites = JSON.parse(localStorage.getItem('booktube_favorites') || '[]');
-        const allFavorites = [...userFavorites, ...defaultFavorites];
-        
-        if (index < userFavorites.length) {
-            // Removing from user favorites
-            userFavorites.splice(index, 1);
-            saveFavorites(userFavorites);
-        } else {
-            // Trying to remove from default favorites - not allowed
-            alert('Cannot remove default favorites. Only custom favorites can be removed.');
-            return;
+    // Clean up favorites saved before input normalization: full URLs, and several entries
+    // for one video. The first entry of a video wins, since newest is saved first.
+    function normalizeStoredFavorites() {
+        const favorites = getFavorites();
+        const seen = new Set();
+        const normalized = [];
+        favorites.forEach(fav => {
+            const v = favoriteKey(fav.v);
+            if (seen.has(v)) return;
+            seen.add(v);
+            normalized.push({ ...fav, v });
+        });
+        if (JSON.stringify(normalized) !== JSON.stringify(favorites)) {
+            console.log('Normalized stored favorites:', favorites.length, '->', normalized.length);
+            saveFavorites(normalized);
         }
+    }
+
+    // Any favorite can be removed, presets included; the preset is not copied back in
+    function removeFromFavorites(index) {
+        const favorites = getFavorites();
+        favorites.splice(index, 1);
+        saveFavorites(favorites);
         renderFavorites();
     }
 
+    // Drop the user's list and copy the presets in again
     function resetFavorites() {
-        localStorage.removeItem('booktube_favorites'); // Clear user favorites
+        localStorage.removeItem('booktube_favorites');
+        localStorage.removeItem(PRESET_SEED_KEY);
+        seedPresetFavorites();
         renderFavorites();
     }
 
@@ -149,17 +293,19 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteBtn.onclick = () => removeFromFavorites(index);
             
             info.onclick = async () => {
-                // Convert + back to spaces for the form input
-                videoInput.value = fav.v.replace(/\+/g, ' ');
+                // Normalize older favorites saved as URLs, so the edit screen shows plain IDs
+                // and playing it again saves it normalized
+                const normalizedIds = favoriteKey(fav.v);
+                videoInput.value = normalizedIds;
                 sleepTimerSelect.value = fav.sleep;
                 loopCheckbox.checked = fav.loop;
                 positionSelect.value = fav.pos;
                 titleInput.value = fav.title;
                 updatePageTitle(fav.title);
-                
+
                 // Update URL with the selected favorite's parameters
                 const params = {
-                    videoId: fav.v.replace(/\+/g, ' '),
+                    videoId: normalizedIds,
                     sleepTimer: fav.sleep,
                     loop: fav.loop,
                     position: fav.pos,
@@ -176,21 +322,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Video ID in a watch, embed, shorts, live or youtu.be URL (m. and music. hosts included)
+    const VIDEO_URL_REGEX = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+
+    // Playlist ID of a token: from a list= URL parameter, or a bare ID — anything longer
+    // than an 11-character video ID ('PLxxx', but also 'OLAK5uy_xxx' albums, 'RDxxx' mixes)
+    function detectPlaylistId(token) {
+        const urlMatch = token.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+        if (urlMatch) return urlMatch[1];
+        return /^[a-zA-Z0-9_-]{12,}$/.test(token) ? token : null;
+    }
+
     // Extract video IDs from input (supports multiple IDs and playlist IDs)
     async function extractVideoIds(input) {
         console.log('Extracting video IDs from input:', input);
         const ids = input.trim().split(/\s+/);
-        const videoRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-        const playlistRegex = /(?:youtube\.com\/.*[?&]list=|youtube\.com\/playlist\?list=)([a-zA-Z0-9_-]+)/;
-        
+        const videoRegex = VIDEO_URL_REGEX;
+
         const results = [];
-        
+
         for (const id of ids) {
             console.log('Processing ID:', id);
             // Check if it's a playlist ID or URL
-            const playlistMatch = id.match(playlistRegex);
-            if (playlistMatch || (id.length > 11 && id.startsWith('PL'))) {
-                const playlistId = playlistMatch ? playlistMatch[1] : id;
+            const playlistId = detectPlaylistId(id);
+            if (playlistId) {
                 console.log('Detected playlist ID:', playlistId);
                 currentPlaylistId = playlistId;
                 try {
@@ -221,17 +376,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Split by both spaces and + signs
         const ids = input.trim().split(/[\s+]+/);
         console.log('convertToVideoIds split ids:', ids);
-        const videoRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-        const playlistRegex = /(?:youtube\.com\/.*[?&]list=|youtube\.com\/playlist\?list=)([a-zA-Z0-9_-]+)/;
-        
+        const videoRegex = VIDEO_URL_REGEX;
+
         const results = [];
-        
+
         for (const id of ids) {
             console.log('Processing id:', id, 'length:', id.length);
             // Check if it's a playlist ID or URL
-            const playlistMatch = id.match(playlistRegex);
-            if (playlistMatch || (id.length > 11 && id.startsWith('PL'))) {
-                const playlistId = playlistMatch ? playlistMatch[1] : id;
+            const playlistId = detectPlaylistId(id);
+            if (playlistId) {
                 console.log('Found playlist:', playlistId);
                 results.push(playlistId);
             } else {
@@ -328,16 +481,101 @@ document.addEventListener('DOMContentLoaded', function() {
         throw lastError || new Error('All proxies failed');
     }
 
+    // The embedded player caps a playlist at 200 videos
+    const IFRAME_PLAYLIST_LIMIT = 200;
+    const IFRAME_PLAYLIST_TIMEOUT_MS = 15000;
+
+    // The IFrame API script loads asynchronously; a quick form submit can beat it
+    function waitForYT(timeoutMs = 5000) {
+        if (window.YT && YT.Player) return Promise.resolve(true);
+        return new Promise(resolve => {
+            const start = Date.now();
+            const timer = setInterval(() => {
+                if (window.YT && YT.Player) {
+                    clearInterval(timer);
+                    resolve(true);
+                } else if (Date.now() - start > timeoutMs) {
+                    clearInterval(timer);
+                    resolve(false);
+                }
+            }, 100);
+        });
+    }
+
+    // Ask a hidden player for the playlist contents: no proxy and no API key needed, and it
+    // works for auto-generated playlists (OLAK5 albums, RD mixes) that have no RSS feed
+    async function fetchPlaylistViaIframe(playlistId) {
+        if (!await waitForYT()) return [];
+
+        // The player replaces the element it is given, so put it in a removable wrapper
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute;width:1px;height:1px;left:-9999px;top:-9999px';
+        const host = document.createElement('div');
+        wrapper.appendChild(host);
+        document.body.appendChild(wrapper);
+
+        return new Promise(resolve => {
+            let settled = false;
+            let tempPlayer, probe, timeout;
+            const finish = ids => {
+                if (settled) return;
+                settled = true;
+                clearInterval(probe);
+                clearTimeout(timeout);
+                try {
+                    if (tempPlayer && tempPlayer.destroy) tempPlayer.destroy();
+                } catch (e) { /* player may not be initialised yet */ }
+                wrapper.remove();
+                console.log('Iframe playlist resolution returned', ids.length, 'videos');
+                resolve(ids);
+            };
+
+            timeout = setTimeout(() => finish([]), IFRAME_PLAYLIST_TIMEOUT_MS);
+            try {
+                tempPlayer = new YT.Player(host, {
+                    width: 200,
+                    height: 200,
+                    // listType + list cues the playlist without playing it
+                    playerVars: { listType: 'playlist', list: playlistId },
+                    events: {
+                        onReady: () => {
+                            probe = setInterval(() => {
+                                const ids = tempPlayer.getPlaylist();
+                                if (ids && ids.length) finish(ids);
+                            }, 250);
+                        },
+                        onError: event => {
+                            console.warn('Iframe playlist resolution error:', event.data);
+                            finish([]);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.warn('Iframe playlist resolution failed:', error);
+                finish([]);
+            }
+        });
+    }
+
     // Fetch all video IDs of a YouTube playlist, reporting progress as it goes
     async function fetchPlaylistVideos(playlistId) {
         console.log('Fetching playlist videos for ID:', playlistId);
         showPlaylistProgress(0, 0);
         try {
-            let videoIds = [];
-            try {
-                videoIds = await fetchPlaylistFromPage(playlistId, showPlaylistProgress);
-            } catch (error) {
-                console.error('Playlist page scraping failed:', error);
+            // The embedded player resolves any playlist without a proxy or API key, but
+            // only up to 200 videos, so longer playlists still need the page scraping
+            let videoIds = await fetchPlaylistViaIframe(playlistId);
+            const cappedByPlayer = videoIds.length === IFRAME_PLAYLIST_LIMIT;
+            if (videoIds.length > 0) {
+                showPlaylistProgress(videoIds.length, cappedByPlayer ? 0 : videoIds.length);
+            }
+            if (videoIds.length === 0 || cappedByPlayer) {
+                try {
+                    const scraped = await fetchPlaylistFromPage(playlistId, showPlaylistProgress);
+                    if (scraped.length > videoIds.length) videoIds = scraped;
+                } catch (error) {
+                    console.error('Playlist page scraping failed:', error);
+                }
             }
             if (videoIds.length === 0) {
                 try {
@@ -518,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function() {
         url.searchParams.set('loop', params.loop);
         url.searchParams.set('pos', params.position);
         
-        if (params.title && params.title !== 'YouTube Audiobook Player') {
+        if (params.title && !isDefaultTitle(params.title)) {
             url.searchParams.set('title', params.title);
         } else {
             url.searchParams.delete('title');
@@ -684,7 +922,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update page title
     function updatePageTitle(title) {
-        document.title = title && title !== 'YouTube Audiobook Player' ? `BookTube - ${title}` : 'BookTube - YouTube Audiobook Player';
+        const shown = title && !isDefaultTitle(title) ? title : DEFAULT_TITLE;
+        document.title = `${BRAND.name} - ${shown}`;
     }
 
     // Load form values from params
@@ -881,8 +1120,11 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         console.log('Form submitted');
 
-        const inputValue = videoInput.value.trim();
-        
+        const rawValue = videoInput.value.trim();
+        // Normalize the input to IDs first: that is what gets shown, saved and put in the URL
+        const inputValue = convertToVideoIds(rawValue) || rawValue;
+        videoInput.value = inputValue;
+
         const params = {
             videoId: inputValue,
             sleepTimer: sleepTimerSelect.value,
@@ -1013,7 +1255,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `booktube-settings-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `notube-settings-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
     });
@@ -1036,11 +1278,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             localStorage.setItem(key, data[key]);
                         }
                     });
+                    normalizeStoredFavorites();
+                    // Presets the imported file never had still get copied in
+                    seedPresetFavorites();
                     renderFavorites();
                     alert('Settings imported successfully!');
                     helpModal.style.display = 'none';
                 } catch (error) {
-                    alert('Invalid file format. Please select a valid BookTube settings file.');
+                    alert('Invalid file format. Please select a valid NoTube settings file.');
                 }
             };
             reader.readAsText(file);
@@ -1142,7 +1387,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initial load - check if we're in edit mode
+    // Initial load - clean up favorites saved by older versions, copy in any presets this
+    // browser has not seen yet, then check for edit mode
+    normalizeStoredFavorites();
+    seedPresetFavorites();
     const initialParams = parseQueryParams();
     if (initialParams.videoId && initialParams.edit) {
         loadFormFromParams(initialParams);

@@ -1,7 +1,7 @@
 {
-  "name": "booktube",
-  "version": "1.4.0",
-  "description": "",
+  "name": "notube",
+  "version": "2.0.0",
+  "description": "NoTube - hands-free YouTube player: sleep timer, saved position, random start, loop and playlist shuffle",
   "main": "booktube.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

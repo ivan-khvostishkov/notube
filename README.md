@@ -1,8 +1,13 @@
-# BookTube - YouTube Audiobook Player
+# NoTube (aka BookTube) - Hands-Free YouTube Player
 
-A lightweight web application for playing YouTube audiobooks with advanced playback features. Perfect for listening to long-form content like audiobooks, podcasts, and lectures on YouTube.
+*YouTube without the feed.*
 
-https://booktube.nosocial.net
+A lightweight web application for playing long-form YouTube content hands-free. Built for audiobooks and podcasts, and just as useful for lectures, language lessons, music albums and workout routines — anything you want to start with one tap and keep running: sleep timer, saved position, random start, loop and playlist shuffle.
+
+- 📖 **BookTube** - https://booktube.nosocial.net - the original name and domain: book logo, red on black, starter favorites are the audiobooks. Support: booktube@nosocial.net
+- ∞ **NoTube** - https://notube.nosocial.net - the same app under the other name: ∞ logo, blue on black, starter favorites are everything that is not a book - music, language lessons, workouts. Support: notube@nosocial.net
+
+One deployment serves both - the brand comes from the hostname, and favorites, saved positions and shared links work the same on either. Add `?brand=booktube` or `?brand=notube` to any URL to see the other face.
 
 **Author:** Ivan Khvostishkov & NoSocial.Net
 
@@ -14,24 +19,27 @@ https://booktube.nosocial.net
 - 📍 **Position Memory** - Resume from where you left off
 - 🎲 **Random Start** - Begin playback from a random position
 - 🔖 **Bookmarkable URLs** - Save and share your playback settings
-- 📝 **Custom Titles** - Set personalized titles for your audiobooks
+- 📝 **Custom Titles** - Set personalized titles for anything you play
 - 📋 **Playlist Support** - Play YouTube playlists or multiple videos in sequence
 - 🔀 **Playlist Shuffling** - Randomize the order of videos in playlists
-- ❤️ **Favorites List** - Save and manage your favorite audiobooks with quick access
+- ❤️ **Favorites List** - Save and manage your favorite books, lessons and routines with quick access
 - 📤 **Export/Import** - Backup and restore your favorites and app data
 - 📱 **Responsive Design** - Works on desktop and mobile devices
-- 🌙 **Dark Theme** - Easy on the eyes for nighttime listening
+- 🌙 **Dark Theme** - Easy on the eyes for nighttime listening, in red on black as BookTube or blue on black as NoTube
+- 💙 **Sponsor Button** - Support development from the About box or on [GitHub Sponsors](https://github.com/sponsors/ivan-khvostishkov)
 
 ## Usage
 
-Some sample audiobooks to start with:
+Some samples to start with:
 
 * [The Bhagavad Gita, The Lord's Song](https://booktube.nosocial.net/?v=IIEJNUO1BoQ&sleep=15&loop=false&pos=saved&title=The+Bhagavad+Gita%2C+The+Lord%27s+Song&edit=true)
 * [The Stories of Mahabharata](https://booktube.nosocial.net/?v=PLAQ6vzFKj_1uqRv3OCX-Elexz9C8vfENs&sleep=30&loop=false&pos=saved&title=The+Stories+of+Mahabharata&edit=true)
 * [Siddhartha by Hermann Hesse](https://booktube.nosocial.net/?v=vS4ble0Uznk&sleep=30&loop=false&pos=saved&title=Siddhartha+By+Hermann+Hesse&edit=true)
 * [The Master and Margarita by Mikhail Bulgakov](https://booktube.nosocial.net/?v=PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC&sleep=30&loop=false&pos=saved&title=The+Master+and+Margarita+by+Mikhail+Bulgakov&edit=true)
+* [Home Exercise Guide: Abs](https://notube.nosocial.net/?v=PLG9bZb7LskJM&sleep=0&loop=true&pos=random&title=Home+Exercise+Guide%3A+Abs&edit=true) - a workout playlist on endless random repeat
+* [Default Music for Generic People (rmnz)](https://notube.nosocial.net/?v=OLAK5uy_kZPrWNRLjJnjHMA31GyiFwmphn_4a-rE0&sleep=30&loop=true&pos=saved&title=Default+Music+for+Generic+People+%28rmnz%29&edit=true) - an album looping indefinitely
 
-See more in [BookTube Selected Books](Books.md).
+The full collection is the favorites ❤️ list inside the app: audiobooks on [BookTube](https://booktube.nosocial.net), music, lessons and workouts on [NoTube](https://notube.nosocial.net).
 
 ## Use Cases
 
@@ -40,19 +48,22 @@ See more in [BookTube Selected Books](Books.md).
 - 📖 **Educational Content**: Lectures, courses, and tutorials
 - 🛌 **Sleep Stories**: Bedtime content with automatic shutoff
 - 🗣️ **Language Learning**: Perfect for learning foreign language phrases - see more at [Language Learning Tips](#language-learning-tips)
+    - Works for video lessons too, not only audio: phrase collections with on-screen text and translations play hands-free the same way
     - Use random position to hear different phrases each session
     - Set a 15-30 minute timer for daily practice
     - Loop feature helps with repetition and memorization
     - No specific order means uniform exposure to all material
+- 🏋️ **Workouts & Training**: Exercise playlists on random position with loop enabled, so a different routine starts on every tap and keeps going without touching the screen
+- 🎵 **Music Albums**: Album playlists (`OLAK5uy_...`) with loop for continuous background listening
 - 🚗 **Road Trips**: Entertainment for long drives (passenger use only!)
 
 ### Basic Playback
 
-0. Navigate to https://booktube.nosocial.net/
+0. Navigate to https://notube.nosocial.net/ or https://booktube.nosocial.net/
 
-1. Enter a YouTube video ID, full URL, or playlist ID in the input field
-2. Optionally set a custom title for your audiobook
-3. For playlists, use a YouTube playlist ID (PLxxx) or add multiple video IDs separated by spaces
+1. Enter a YouTube video ID, full URL, or playlist ID in the input field — on Play the field is normalized to plain video IDs
+2. Optionally set a custom title for what you are playing
+3. For playlists, use a YouTube playlist ID (PLxxx, OLAK5xxx album, RDxxx mix) or add multiple video IDs separated by spaces
 4. Select your desired settings:
     - **Sleep Timer**: Choose when to automatically pause playback
     - **Loop**: Enable to replay the video indefinitely
@@ -64,15 +75,17 @@ See more in [BookTube Selected Books](Books.md).
 
 - **Access Favorites**: Click the heart icon (❤️) in the top-right corner to view your favorites list
 - **Quick Play**: Click any favorite item to instantly load its settings into the form
-- **Remove Items**: Click the × button next to any favorite to remove it from your list
-- **Auto-Save**: New audiobooks are automatically saved to favorites when the "Save to favorites" checkbox is checked (enabled by default)
+- **Presets**: The app ships with a starter collection. Each preset is copied into your own list the first time you open the app, so the list you see is exactly the list that is stored and exported. Presets added in a later release are copied in on your next visit
+- **Remove Items**: Click the × button next to any favorite to remove it from your list — presets included, and a removed preset is not copied back
+- **Auto-Save**: Anything you play is automatically saved to favorites when the "Save to favorites" checkbox is checked (enabled by default); replaying something already saved updates that entry instead of adding a duplicate
 - **Export Data**: Use the "Export App Data" button in the help modal to download your favorites and playback positions as a JSON file
 - **Import Data**: Use the "Import App Data" button to restore favorites and positions from a previously exported JSON file
-- **Reset**: Use the "Reset App Data" button in the help modal to restore the default favorites list
+- **Reset**: Use the "Reset App Data" button in the help modal to clear your list and copy the presets in again
+- **Presets Per Brand**: BookTube starts you with the audiobooks, NoTube with the music, lessons and workouts. Anything you save yourself shows up on whichever domain you saved it
 
 ### URL Parameters
 
-BookTube supports URL parameters for bookmarking and sharing:
+NoTube supports URL parameters for bookmarking and sharing:
 
 ```
 ?v=VIDEO_ID_OR_PLAYLIST&title=CUSTOM_TITLE&sleep=MINUTES&loop=true/false&pos=beginning/saved/random/shuffle&edit=true/false
@@ -82,15 +95,16 @@ BookTube supports URL parameters for bookmarking and sharing:
 
 Examples:
 - Auto-play with custom title (30-minute timer): `?v=vS4ble0Uznk&title=My%20Audiobook&sleep=30`
-- YouTube playlist: `?v=PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC&loop=true`
+- YouTube playlist: `?v=PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC`
 - Shuffled playlist: `?v=PLAQ6vzFKj_1uqRv3OCX-Elexz9C8vfENs&pos=shuffle`
 - Multiple videos (played in sequence): `?v=NSfkgr5TTYM+yPnhdK9touU+YjvTqHfFqEc`
-- Loop from saved position: `?v=vS4ble0Uznk&loop=true&pos=saved`
+- Indefinite loop - a music album that restarts when it ends: `?v=OLAK5uy_kZPrWNRLjJnjHMA31GyiFwmphn_4a-rE0&loop=true&pos=saved`
+- Random position - a workout playlist starting at a random video and a random point in it, looping forever: `?v=PLG9bZb7LskJM&pos=random&loop=true&sleep=0`
 - Open in edit mode: `?v=vS4ble0Uznk&sleep=60&edit=true`
 
 ### Edit Mode
 
-When playing a video, click the BookTube logo to return to the configuration screen. The URL will preserve all your settings with `edit=true`, allowing you to:
+When playing a video, click the NoTube logo to return to the configuration screen. The URL will preserve all your settings with `edit=true`, allowing you to:
 - Modify settings before replaying
 - Share a pre-configured link that doesn't auto-play
 - Create bookmark collections with different settings
@@ -114,7 +128,7 @@ The player uses standard YouTube keyboard shortcuts:
 
 ## Browser Compatibility
 
-BookTube works best on:
+NoTube works best on:
 - Chrome/Chromium (recommended)
 - Firefox
 - Safari
@@ -124,7 +138,7 @@ Requires JavaScript and YouTube IFrame API access.
 
 ## Privacy
 
-BookTube is a client-side application that:
+NoTube is a client-side application that:
 - Stores playback positions and favorites locally in your browser
 - Doesn't collect or transmit any personal data
 - Only connects to YouTube for video playback
@@ -134,7 +148,7 @@ BookTube is a client-side application that:
 
 - **No Backend Required**: Runs entirely in the browser
 - **Local Storage**: Saves playback positions per video and favorites list
-- **YouTube IFrame API**: Official YouTube player integration
+- **YouTube IFrame API**: Official YouTube player integration, also used to resolve playlist contents without a proxy or API key (up to 200 videos; longer playlists fall back to page scraping through a CORS proxy)
 - **Responsive CSS**: Adapts to any screen size
 - **URL State Management**: All settings preserved in URL
 - **Favorites Management**: Persistent local storage with default curated collection
@@ -143,7 +157,7 @@ BookTube is a client-side application that:
 
 ## Language Learning Tips
 
-BookTube is especially useful for language learners using YouTube phrase collections:
+NoTube is especially useful for language learners using YouTube phrase collections:
 
 1. **Daily Random Practice**: Set position to "random" and timer to 15-20 minutes for daily exposure to different phrases
 2. **Spaced Repetition**: The random feature naturally creates spaced repetition as you'll hear phrases at different intervals
@@ -156,10 +170,11 @@ Example setup for language learning:
 ?v=PHRASE_VIDEO_ID&sleep=20&loop=true&pos=random
 ```
 
-Sample YouTube videos for German language from the [German Hands-Free Trainer](https://github.com/ivan-khvostishkov/german-a1-trainer) project:
+Sample YouTube videos for German language from the [German Hands-Free Trainer](https://github.com/ivan-khvostishkov/german-a1-trainer) project - all three are NoTube presets, on random position with an indefinite loop and a one-hour timer:
 
-* German A1 (Start Deutsch 1): https://booktube.nosocial.net/?v=tSCrnPUt-pU&sleep=20&loop=true&pos=random&edit=true
-* German A2: https://booktube.nosocial.net/?v=esvhhEGLTNA&sleep=20&loop=true&pos=random&edit=true
+* German A1 (Start Deutsch 1): https://notube.nosocial.net/?v=tSCrnPUt-pU&sleep=60&loop=true&pos=random&edit=true
+* German A2: https://notube.nosocial.net/?v=esvhhEGLTNA&sleep=60&loop=true&pos=random&edit=true
+* German B1 (three parts, played in random order): https://notube.nosocial.net/?v=wNoTY_TZvqI+UBcIZf76mIs+JYDI_HhWIgs&sleep=60&loop=true&pos=random&edit=true
 
 ## Troubleshooting
 
@@ -186,8 +201,8 @@ For support, contact: booktube@nosocial.net
 
 - Font Awesome for icons
 - YouTube for the IFrame Player API
-- All audiobook creators on YouTube
+- All audiobook, lesson and workout creators on YouTube
 
 ---
 
-Enjoy your audiobooks! 📚🎧
+Enjoy your listening! 📚🎧

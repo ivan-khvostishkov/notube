@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BookTube - YouTube Audiobook Player</title>
+    <title>NoTube - Hands-Free YouTube Player</title>
+    <meta name="description" content="Hands-free YouTube player for long-form listening and watching: audiobooks, lectures, language lessons, music and workout routines. Sleep timer, saved position, random start, loop and playlist shuffle.">
+    <link rel="icon" id="favicon" href="favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,8 +14,8 @@
 <div id="mainScreen" class="screen active">
     <header>
         <div class="logo-title">
-            <i class="fas fa-book-reader logo"></i>
-            <h1>BookTube</h1>
+            <i class="fas fa-infinity logo brand-icon"></i>
+            <h1 id="brandName">NoTube</h1>
             <span class="subtitle">by NoSocial.Net</span>
         </div>
         <div class="header-icons">
@@ -25,13 +27,13 @@
     <main class="form-container">
         <form id="playForm">
             <div class="form-group">
-                <label for="videoInput">YouTube Video ID or URL <i class="fas fa-info-circle" id="videoInputInfo" style="color: #666; cursor: pointer; font-size: 0.8em;"></i></label>
-                <input type="text" id="videoInput" placeholder="Enter video ID, URL, or playlist ID" required>
+                <label for="videoInput">YouTube Video IDs or URL <i class="fas fa-info-circle" id="videoInputInfo" style="color: #666; cursor: pointer; font-size: 0.8em;"></i></label>
+                <input type="text" id="videoInput" placeholder="Enter video IDs, URLs, or playlist ID" required>
             </div>
 
             <div class="form-group">
                 <label for="titleInput">Your Title</label>
-                <input type="text" id="titleInput" placeholder="YouTube Audiobook Player">
+                <input type="text" id="titleInput" placeholder="Hands-Free YouTube Player">
             </div>
 
             <div class="form-group">
@@ -85,7 +87,7 @@
     <div class="player-container">
         <div id="youtubePlayer"></div>
         <div class="overlay-logo" id="backToMain">
-            <i class="fas fa-book-reader"></i>
+            <i class="fas fa-infinity brand-icon"></i>
         </div>
         <div class="sleep-timer-overlay" id="sleepTimerOverlay">
             <i class="fas fa-clock"></i>
@@ -107,7 +109,7 @@
 <div id="favoritesScreen" class="screen">
     <header>
         <div class="logo-title">
-            <i class="fas fa-book-reader logo" id="backFromFavorites"></i>
+            <i class="fas fa-infinity logo brand-icon" id="backFromFavorites"></i>
             <h1>Favorites</h1>
         </div>
         <div class="header-icons">
@@ -123,23 +125,31 @@
 <div id="helpModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
-        <h2>About BookTube</h2>
-        <p>&copy; 2013-<span id="currentYear"></span> NoSocial.Net & Ivan Khvostishkov</p>
-        <p><a href="https://github.com/ivan-khvostishkov/booktube">BookTube on GitHub</a></p>
-        <p>For support & questions:</p>
-        <p><a href="mailto:booktube@nosocial.net">booktube@nosocial.net</a></p>
+        <h2 id="aboutTitle">About NoTube</h2>
+        <p id="aboutTagline">YouTube without the feed. Hands-free playback of lectures,
+            language lessons, music and workouts.</p>
+        <p class="rename-note" id="brandNote">Looking for the audiobook collection? Same app,
+            as <a href="https://booktube.nosocial.net/">BookTube</a>.</p>
+        <a class="sponsor-button" id="sponsorButton" href="https://github.com/sponsors/ivan-khvostishkov"
+           target="_blank" rel="noopener noreferrer">
+            <i class="fas fa-heart"></i> Sponsor this app
+        </a>
         <div class="settings-buttons">
             <button id="exportButton" class="settings-button">
-                <i class="fas fa-download"></i> Export App Data
+                <i class="fas fa-download"></i> Export Data
             </button>
             <button id="importButton" class="settings-button">
-                <i class="fas fa-upload"></i> Import App Data
+                <i class="fas fa-upload"></i> Import Data
             </button>
         </div>
         <input type="file" id="importFile" accept=".json" style="display: none;">
         <button id="resetAppButton" class="reset-button">
             <i class="fas fa-trash-alt"></i> Reset App Data
         </button>
+        <p class="about-meta"><a id="supportEmail" href="mailto:notube@nosocial.net">notube@nosocial.net</a>
+            &middot; <a id="githubLink" href="https://github.com/ivan-khvostishkov/notube">GitHub</a></p>
+        <p class="about-meta">&copy; 2013-<span id="currentYear"></span> NoSocial.Net & Ivan Khvostishkov
+            &middot; <span id="appVersion"></span></p>
     </div>
 </div>
 

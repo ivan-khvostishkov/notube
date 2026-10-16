@@ -1,4 +1,46 @@
-# BookTube Release Notes
+# NoTube Release Notes
+
+## Version 2.0 - October 2026
+
+### 📋 Playlist Loading
+- **Playlists Load Without a Proxy** - The embedded player itself reports the playlist contents, so loading no longer depends on r.jina.ai or the other CORS proxies being up
+- **Auto-Generated Playlists** - Album (`OLAK5uy_...`) and mix (`RD...`) playlists load now; they have no RSS feed and previously failed with "0/0" and "No valid video IDs found"
+- **Shared Playlist Links** - A link with a non-`PL` playlist ID in `?v=` plays instead of reporting no valid video IDs
+- **Long Playlists** - Playlists over 200 videos (the embedded player's limit) still load in full via page scraping
+
+### ❤️ Favorites
+- **Presets Are Part of Your List** - Each preset is copied into the stored favorites list the first time it is seen, so the list on screen is exactly the list that is stored and exported. Exporting on a fresh browser no longer produces an empty `{}` while 18 favorites are on screen
+- **Presets Can Be Removed** - The × button now works on presets too, and a removed preset stays removed; "Cannot remove default favorites" is gone
+- **Presets Still Ship With Releases** - A preset added in a later release is copied into existing users' lists on their next visit, tracked per preset in `booktube_seeded_presets`
+- **Normalized Input** - Pressing Play rewrites the input field to plain video IDs; that normalized form is what gets saved to favorites and put in the URL, so no more `https://m.youtube.com/...` entries
+- **No Duplicates** - Saving a video that is already in favorites updates that entry instead of adding a second one, whichever form (URL or ID) it was saved in
+- **Legacy Cleanup** - Favorites saved as URLs by older versions are normalized and de-duplicated on load, and when opened for editing
+- **Overridden Defaults** - A default favorite that has been re-saved with your own settings appears once in the list
+
+### 🏷️ Two Names, One App
+- **NoTube** - The app is now also **NoTube** - "YouTube without the feed" - matching what it is used for beyond books: ∞ logo, blue on black, and starter favorites made of music, language lessons and workouts
+- **BookTube Stays** - booktube.nosocial.net keeps the name, the book logo, the red on black palette and the audiobook starter favorites. The brand is picked from the hostname, so one deployment serves both; `?brand=booktube` / `?brand=notube` switches it for a visit
+- **Both Addresses** - booktube@nosocial.net on BookTube, notube@nosocial.net on NoTube
+- **Nothing to Migrate** - Same storage, same favorites, same saved positions, same shared links. Exported data files are now named `notube-settings-<date>.json`, and older `booktube-settings-*.json` files still import
+
+### 💙 Support
+- **Sponsor Button** - In the About box, and a Sponsor button on the GitHub repository
+
+### 📱 About Box
+- Opens near the top of the screen instead of a third of the way down, and fits a phone screen without scrolling; the long description was trimmed and the links moved into one compact line
+- Shows the app version
+
+### 📚 Content
+- **Beyond Audiobooks** - App description now covers what it is actually used for: audiobooks and podcasts, lectures, language video lessons (with on-screen text and translations), music albums and workout routines. Default title placeholder changed from "YouTube Audiobook Player" to "Hands-Free YouTube Player"; links still carrying the old one keep working
+- Added to the default favorites: Suetonius' The Lives of the Caesars (Classics in Audiobook) on BookTube; Default Music for Generic People (rmnz, looping indefinitely), Home Exercise Guide: Abs and the German A1/A2/B1 Hands-Free Trainers (random position, indefinite loop, one-hour timer) on NoTube
+- README examples now show an indefinite loop (music album) and random position (workout playlist)
+- Removed Books.md: the selected books are the favorites list inside the app
+
+### 🐛 Bug Fixes
+- `youtube.com/shorts/...` and `youtube.com/live/...` URLs are recognized as video IDs
+- Input label corrected to "YouTube Video IDs or URL"
+
+---
 
 ## Version 1.4 - September 2026
 
