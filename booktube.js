@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
         { v: 'PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC', book: true, sleep: '20', loop: false, pos: 'saved', title: 'The Master and Margarita by Mikhail Bulgakov' },
         { v: '-H3IjANl0V4 BR0k8I8i28U', book: true, sleep: '30', loop: false, pos: 'saved', title: 'Наши за границей. Николай Лейкин (Gennady Anatolievich)' },
         { v: 'PLa-hUuSspM0GdvkB-YHW5KVyuCe2QrhMx', book: true, sleep: '30', loop: false, pos: 'saved', title: 'Suetonius\' The Lives of the Caesars (Classics in Audiobook)' },
-        { v: 'OLAK5uy_kZPrWNRLjJnjHMA31GyiFwmphn_4a-rE0', sleep: '30', loop: true, pos: 'saved', title: 'Default Music for Generic People (rmnz)' },
+        { v: 'OLAK5uy_kZPrWNRLjJnjHMA31GyiFwmphn_4a-rE0', sleep: '0', loop: true, pos: 'saved', title: 'Default Music for Generic People (rmnz)' },
         { v: 'PL5E0m9KbufwZlALCgXRHyoE99VeORMmzr', book: true, sleep: '30', loop: false, pos: 'random', title: 'Тысяча и одна ночь. Сказки' },
         { v: 'nwRoHC83wx0', sleep: '45', loop: true, pos: 'random', title: 'Gayatri Mantra – Rig Veda 3.62.10' },
         { v: 'PLG9bZb7LskJM', sleep: '0', loop: true, pos: 'random', title: 'Home Exercise Guide: Abs' },

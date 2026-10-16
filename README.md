@@ -53,7 +53,7 @@ Some samples to start with:
 * [Siddhartha by Hermann Hesse](https://booktube.nosocial.net/?v=vS4ble0Uznk&sleep=30&loop=false&pos=saved&title=Siddhartha+By+Hermann+Hesse&edit=true)
 * [The Master and Margarita by Mikhail Bulgakov](https://booktube.nosocial.net/?v=PL-lY2fdb59Of61NGdOmXUagd0f1B_RUXC&sleep=30&loop=false&pos=saved&title=The+Master+and+Margarita+by+Mikhail+Bulgakov&edit=true)
 * [Home Exercise Guide: Abs](https://notube.nosocial.net/?v=PLG9bZb7LskJM&sleep=0&loop=true&pos=random&title=Home+Exercise+Guide%3A+Abs&edit=true) - a workout playlist on endless random repeat
-* [Default Music for Generic People (rmnz)](https://notube.nosocial.net/?v=OLAK5uy_kZPrWNRLjJnjHMA31GyiFwmphn_4a-rE0&sleep=30&loop=true&pos=saved&title=Default+Music+for+Generic+People+%28rmnz%29&edit=true) - an album looping indefinitely
+* [Default Music for Generic People (rmnz)](https://notube.nosocial.net/?v=OLAK5uy_kZPrWNRLjJnjHMA31GyiFwmphn_4a-rE0&sleep=0&loop=true&pos=saved&title=Default+Music+for+Generic+People+%28rmnz%29&edit=true) - an album looping indefinitely, no sleep timer
 
 The full collection is the favorites ❤️ list inside the app: audiobooks on [BookTube](https://booktube.nosocial.net), music, lessons and workouts on [NoTube](https://notube.nosocial.net).
 
